@@ -134,3 +134,4 @@ dmypy.json
 *.pgn
 cur.png
 lastpost.id
+log.txt

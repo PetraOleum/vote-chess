@@ -152,7 +152,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
                                        in_reply_to_id=lasttoot_id,
                                        media_ids=img,
                                        visibility="public")["id"]
-    sleep(5)
+    sleep(50)
     tootstring = ""
     if len(options) == 1:
         tootstring = "Only one legal move: {}".format(
