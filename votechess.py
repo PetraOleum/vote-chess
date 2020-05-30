@@ -56,6 +56,9 @@ def clean_endgame(board, lastMove, lastMbut1 = None):
     global mastodon
     global lasttoot_id
     print_board(board)
+    img = mastodon.media_post("cur.png", description=
+                              "Position after {}\nFEN: {}".format(
+                                  lastMove, board.fen()))
     res = board.result(claim_draw=False)
     egmsg = ""
     if board.is_checkmate():
@@ -94,6 +97,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None):
     print(egmsg)
     lasttoot_id = mastodon.status_post(egmsg,
                                        in_reply_to_id=None,
+                                       media_ids=img,
                                        visibility="public")["id"]
     print(pgn, file=open("archive.pgn", "a"), end="\n\n")
     os.remove("current.pgn")
@@ -124,7 +128,8 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     global args
     print_board(curBoard)
     img = mastodon.media_post("cur.png", description=
-        "Position after {}".format(last_Comp_Move))
+                              "Position after {}\nFEN: {}".format(
+                                  last_Comp_Move, curBoard.fen()))
     engine = chess.engine.SimpleEngine.popen_uci("stockfish")
     moves = eng_rate(curBoard.legal_moves, curBoard, engine)
     engine.quit()
