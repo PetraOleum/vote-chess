@@ -147,7 +147,6 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
 
     print(tootstring)
 
-    # Private toots for testing
     lasttoot_id = mastodon.status_post(tootstring,
                                        in_reply_to_id=None,
                                        media_ids=img,
@@ -158,7 +157,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         tootstring = "Only one legal move: {}".format(
               board.variation_san([options[0][0]]))
         lasttoot_id = mastodon.status_post(tootstring,
-                                           in_reply_to_id=None,
+                                           in_reply_to_id=lasttoot_id,
                                            visibility="public")["id"]
     else:
         tootstring = "Options:\n"
@@ -172,7 +171,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
             tmsg = ("Choose a move to reply to {}:").format(last_Comp_Move)
 
         lasttoot_id = mastodon.status_post(tmsg, poll=poll,
-                                           in_reply_to_id=None,
+                                           in_reply_to_id=lasttoot_id,
                                            visibility="public")["id"]
         print(lasttoot_id, file=open("lastpost.id", "w"))
 
