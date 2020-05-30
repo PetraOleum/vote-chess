@@ -166,8 +166,12 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
             tootstring = tootstring + "{}) {}\n".format(i+1, curBoard.variation_san([options[i][0]]))
         opstrings = [curBoard.san(mv[0]) for mv in options]
         poll = mastodon.make_poll(opstrings, expires_in = args.poll_length)
-        lasttoot_id = mastodon.status_post(("Choose a move to reply to "
-                                           "{}:").format(last_Comp_Move), poll=poll,
+        if last_Comp_Move == None:
+            tmsg = "Choose a move to play:"
+        else:
+            tmsg = ("Choose a move to reply to {}:").format(last_Comp_Move)
+
+        lasttoot_id = mastodon.status_post(tmsg, poll=poll,
                                            in_reply_to_id=lasttoot_id,
                                            visibility="public")["id"]
         print(lasttoot_id, file=open("lastpost.id", "w"))
