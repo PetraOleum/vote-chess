@@ -93,7 +93,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None):
         pgn.headers["Black"] = "Mastodon"
     print(egmsg)
     lasttoot_id = mastodon.status_post(egmsg,
-                                       in_reply_to_id=lasttoot_id,
+                                       in_reply_to_id=None,
                                        visibility="public")["id"]
     print(pgn, file=open("archive.pgn", "a"), end="\n\n")
     os.remove("current.pgn")
@@ -149,7 +149,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
 
     # Private toots for testing
     lasttoot_id = mastodon.status_post(tootstring,
-                                       in_reply_to_id=lasttoot_id,
+                                       in_reply_to_id=None,
                                        media_ids=img,
                                        visibility="public")["id"]
     sleep(50)
@@ -158,7 +158,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         tootstring = "Only one legal move: {}".format(
               board.variation_san([options[0][0]]))
         lasttoot_id = mastodon.status_post(tootstring,
-                                           in_reply_to_id=lasttoot_id,
+                                           in_reply_to_id=None,
                                            visibility="public")["id"]
     else:
         tootstring = "Options:\n"
@@ -172,7 +172,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
             tmsg = ("Choose a move to reply to {}:").format(last_Comp_Move)
 
         lasttoot_id = mastodon.status_post(tmsg, poll=poll,
-                                           in_reply_to_id=lasttoot_id,
+                                           in_reply_to_id=None,
                                            visibility="public")["id"]
         print(lasttoot_id, file=open("lastpost.id", "w"))
 
