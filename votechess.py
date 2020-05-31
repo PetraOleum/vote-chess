@@ -48,7 +48,7 @@ def print_board(board):
         lm = board.peek()
     board_svg = chess.svg.board(board, flipped = (player == chess.BLACK),
                                 lastmove=lm)
-    svg2png(bytestring=board_svg,write_to='cur.png', scale=2)
+    svg2png(bytestring=board_svg,write_to='cur.png', scale=1.5)
 
 
 def clean_endgame(board, lastMove, lastMbut1 = None):
