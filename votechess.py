@@ -19,7 +19,7 @@ parser.add_argument("--engine-depth", type=int, default=10,
                     dest="edist")
 parser.add_argument("-d", "--dir", default=".", dest="dir",
                     help="Directory to operate in")
-parser.add_argument("-p", "--poll-length", default=3540, type=int,
+parser.add_argument("-p", "--poll-length", default=3420, type=int,
                     dest="poll_length",
                     help="Number of seconds for poll to last")
 
