@@ -96,7 +96,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None):
         pgn.headers["Black"] = "Mastodon"
     print(egmsg)
     lasttoot_id = mastodon.status_post(egmsg,
-                                       in_reply_to_id=None,
+                                       in_reply_to_id=lasttoot_id,
                                        media_ids=img,
                                        visibility="public")["id"]
     print(pgn, file=open("archive.pgn", "a"), end="\n\n")
@@ -153,7 +153,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     print(tootstring)
 
     lasttoot_id = mastodon.status_post(tootstring,
-                                       in_reply_to_id=None,
+                                       in_reply_to_id=lasttoot_id,
                                        media_ids=img,
                                        visibility="public")["id"]
     sleep(50)
