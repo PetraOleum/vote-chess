@@ -55,6 +55,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None):
     global player
     global mastodon
     global lasttoot_id
+    global args
     print_board(board)
     img = mastodon.media_post("cur.png", description=
                               "Position after {}\nFEN: {}".format(
@@ -90,9 +91,9 @@ def clean_endgame(board, lastMove, lastMbut1 = None):
     pgn.headers["Event"] = "Mastodon vote chess"
     if player == chess.WHITE:
         pgn.headers["White"] = "Mastodon"
-        pgn.headers["Black"] = "Computer"
+        pgn.headers["Black"] = "Computer (depth {})".format(args.edist)
     else:
-        pgn.headers["White"] = "Computer"
+        pgn.headers["White"] = "Computer (depth {})".format(args.edist)
         pgn.headers["Black"] = "Mastodon"
     print(egmsg)
     lasttoot_id = mastodon.status_post(egmsg,
@@ -253,9 +254,9 @@ def load_game():
         pgn.headers["Event"] = "Mastodon vote chess"
         if player == chess.WHITE:
             pgn.headers["White"] = "Mastodon"
-            pgn.headers["Black"] = "Computer"
+            pgn.headers["Black"] = "Computer (depth {})".format(args.edist)
         else:
-            pgn.headers["White"] = "Computer"
+            pgn.headers["White"] = "Computer (depth {})".format(args.edist)
             pgn.headers["Black"] = "Mastodon"
         print(pgn)
         print(pgn, file=open("current.pgn", "w"), end="\n\n")
