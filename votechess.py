@@ -104,21 +104,20 @@ def clean_endgame(board, lastMove, lastMbut1 = None):
     os.remove("current.pgn")
 
 
-def eng_rate(legmoves, board, engine):
-    global limithuman
+def eng_rate(legmoves, board, engine, lim):
     moves = list()
     for mv in legmoves:
         board.push(mv)
-        sc = engine.analyse(board, limithuman)["score"]
+        sc = engine.analyse(board, lim)["score"]
         board.pop()
         moves.append((mv, sc.relative))
     moves.sort(key = lambda tup: tup[1])
     return moves
 
 
-def eng_choose(legmoves, board):
+def eng_choose(legmoves, board, lim):
     engine = chess.engine.SimpleEngine.popen_uci("stockfish")
-    moves = eng_rate(legmoves, board, engine)
+    moves = eng_rate(legmoves, board, engine, lim)
     engine.quit()
     return moves[0][0]
 
@@ -127,12 +126,13 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     global mastodon
     global lasttoot_id
     global args
+    global limithuman
     print_board(curBoard)
     img = mastodon.media_post("cur.png", description=
                               "Position after {}\nFEN: {}".format(
                                   last_Comp_Move, curBoard.fen()))
     engine = chess.engine.SimpleEngine.popen_uci("stockfish")
-    moves = eng_rate(curBoard.legal_moves, curBoard, engine)
+    moves = eng_rate(curBoard.legal_moves, curBoard, engine, limithuman)
     engine.quit()
     if len(moves) < 5:
         options = moves
@@ -187,6 +187,7 @@ def get_vote_results(curBoard):
     global book
     global lasttoot_id
     global mastodon
+    global limitengine
     # For now, just select best move
     try:
         print(lasttoot_id)
@@ -196,12 +197,12 @@ def get_vote_results(curBoard):
         mvotes = max(votes)
         choices = [curBoard.parse_san(mv["title"]) for mv in poll["options"] if
                    mv["votes_count"] == mvotes]
-        return eng_choose(choices, curBoard)
+        return eng_choose(choices, curBoard, limitengine)
     except Exception as e:
         print("Failed to get poll results")
         print(e)
         if len(curBoard.move_stack) > 0:
-            return eng_choose(curBoard.legal_moves, curBoard)
+            return eng_choose(curBoard.legal_moves, curBoard, limitengine)
         else:
             return chess.Move.from_uci(sample(book, 1)[0])
 
