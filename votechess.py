@@ -137,8 +137,9 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     if len(moves) < 5:
         options = moves
     else:
-        options = moves[:3]
-        options.extend(moves[-1:])
+        options = moves[:4] # Get four best, not top 3 and bottom 1
+        # options = moves[:3]
+        # options.extend(moves[-1:])
     shuffle(options)
 
     tootstring = ""
