@@ -9,6 +9,7 @@ import os
 from mastodon import Mastodon
 from time import sleep
 import argparse
+import requests
 
 parser = argparse.ArgumentParser(description="Vote chess mastodon bot")
 parser.add_argument("--human-depth", type=int, default=10,
@@ -51,7 +52,7 @@ def print_board(board):
     svg2png(bytestring=board_svg,write_to='cur.png', scale=1.5)
 
 
-def clean_endgame(board, lastMove, lastMbut1 = None):
+def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
     global player
     global mastodon
     global lasttoot_id
@@ -61,6 +62,8 @@ def clean_endgame(board, lastMove, lastMbut1 = None):
                               "Position after {}\nFEN: {}".format(
                                   lastMove, board.fen()))
     res = board.result(claim_draw=False)
+    if adjud:
+        res = "1/2-1/2"
     egmsg = ""
     if board.is_checkmate():
         egmsg = "Checkmate!\n"
@@ -75,6 +78,16 @@ def clean_endgame(board, lastMove, lastMbut1 = None):
         else:
             egmsg = egmsg + "The computer replies to {} with {}. Stalemate!\n".format(
                 lastMbut1, lastMove)
+    elif adjud:
+        if lastMbut1 == None:
+            egmsg = egmsg + ("After {} the position is adjudicated to a "
+                             "tablebase draw.\n").format(lastMove)
+        else:
+            egmsg = egmsg + "The computer replies to {} with {}.\n".format(
+                lastMbut1, lastMove)
+            egmsg = egmsg + "The position is adjudicated to a tablebase draw.\n"
+        fenmod = board.fen().replace(" ", "_")
+        egmsg = egmsg + "https://syzygy-tables.info/?fen={}\n".format(fenmod)
     else:
         if lastMbut1 == None:
             egmsg = egmsg + "With {} the humans claim a draw.\n".format(lastMove)
@@ -288,6 +301,17 @@ if not board.is_game_over(claim_draw=False):
     lastMoveSan = board.variation_san([lastMove])
     board.push(engmov)
     if not board.is_game_over(claim_draw=False):
+        if board.halfmove_clock > 10:
+            if len(board.piece_map()) < 7:
+                try:
+                    fenmod = board.fen().replace(" ", "_")
+                    apiurl = "http://tablebase.lichess.ovh/standard?fen="
+                    r = requests.get(url="{}{}".format(apiurl, fenmod))
+                    if r.json()["wdl"] == 0:
+                        print("Tablebase draw")
+                        clean_endgame(board, lastMoveSan, humMoveSan, True)
+                except:
+                    pass
         set_up_vote(lastMoveSan, board, humMoveSan)
         # Save board
         print("saving")
