@@ -310,6 +310,7 @@ if not board.is_game_over(claim_draw=False):
                     if r.json()["wdl"] == 0:
                         print("Tablebase draw")
                         clean_endgame(board, lastMoveSan, humMoveSan, True)
+                        quit()
                 except:
                     pass
         set_up_vote(lastMoveSan, board, humMoveSan)
