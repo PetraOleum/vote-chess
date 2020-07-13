@@ -302,7 +302,7 @@ if not board.is_game_over(claim_draw=False):
     board.push(engmov)
     if not board.is_game_over(claim_draw=False):
         if board.halfmove_clock > 10:
-            if len(board.piece_map()) < 7:
+            if len(board.piece_map()) < 8:
                 try:
                     fenmod = board.fen().replace(" ", "_")
                     apiurl = "http://tablebase.lichess.ovh/standard?fen="
