@@ -303,16 +303,13 @@ if not board.is_game_over(claim_draw=False):
     if not board.is_game_over(claim_draw=False):
         if board.halfmove_clock > 10:
             if len(board.piece_map()) < 8:
-                try:
-                    fenmod = board.fen().replace(" ", "_")
-                    apiurl = "http://tablebase.lichess.ovh/standard?fen="
-                    r = requests.get(url="{}{}".format(apiurl, fenmod))
-                    if r.json()["wdl"] == 0:
-                        print("Tablebase draw")
-                        clean_endgame(board, lastMoveSan, humMoveSan, True)
-                        quit()
-                except:
-                    pass
+                fenmod = board.fen().replace(" ", "_")
+                apiurl = "http://tablebase.lichess.ovh/standard?fen="
+                r = requests.get(url="{}{}".format(apiurl, fenmod))
+                if r.json()["wdl"] == 0:
+                    print("Tablebase draw")
+                    clean_endgame(board, lastMoveSan, humMoveSan, True)
+                    quit()
         set_up_vote(lastMoveSan, board, humMoveSan)
         # Save board
         print("saving")
