@@ -149,7 +149,10 @@ def eng_choose(legmoves, board, lim):
                 allbook = reader.find_all(board)
                 bweights = [e.weight for e in allbook]
                 bmoves = [e.move for e in allbook]
-        if len(bmoves > 0):
+                print("Opening book:")
+                for entry in reader.find_all(board):
+                    print(entry.move, entry.weight, entry.learn)
+        if len(bmoves) > 0:
             return choices(bmoves, weights=bweights)
     except Exception as e:
         print("Failed to read opening book")
