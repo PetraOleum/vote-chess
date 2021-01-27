@@ -50,6 +50,8 @@ player = chess.WHITE
 lasttoot_id = None
 
 def opening_choice(board, bookfile, k=1):
+    if k < 1:
+        return [None]
     bweights = []
     bmoves = []
     try:
@@ -60,14 +62,17 @@ def opening_choice(board, bookfile, k=1):
             print("Opening book:")
             for entry in reader.find_all(board):
                 print(entry.move, entry.weight, entry.learn)
-        if len(bmoves) > 0:
-            chosen = choice(bmoves, k, replace = False, p=bweights)
-            print("Move chosen: {}".format(board.variation_san([chosen])))
+        if len(bmoves) > k:
+            sw = sum(bweights)
+            pweights = [b / sw for b in bweights]
+            chosen = choice(bmoves, k, replace = False, p=pweights)
             return chosen
+        if len(bmoves) > 0:
+            return(bmoves)
     except Exception as e:
         print("Failed to read opening book")
         print(e)
-    return None
+    return [None]
 
 def print_board(board):
     global player
