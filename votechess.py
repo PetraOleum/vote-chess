@@ -191,12 +191,13 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     curlegmoves = [m for m in curBoard.legal_moves]
     moves = []
     if curBoard.fullmove_number < 10 and args.polyglot_book != "":
-        moves = opening_chioce(curBoard, args.polyglot_book, 4)
+        moves = [m for m in opening_choice(curBoard, args.polyglot_book, 4)]
         if moves[0] is None:
             moves = []
     if len(moves) < len(curlegmoves) and len(moves) < 5:
         engine = chess.engine.SimpleEngine.popen_uci("stockfish")
-        moves = moves + eng_rate([mov for mov in curlegmoves if mov not in moves], curBoard, engine, limithuman)
+        emovs = eng_rate([mov for mov in curlegmoves if mov not in moves], curBoard, engine, limithuman)
+        moves = moves + [m[0] for m in emovs]
         engine.quit()
     if len(moves) < 5:
         options = moves
@@ -229,15 +230,19 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     tootstring = ""
     if len(options) == 1:
         tootstring = "Only one legal move: {}".format(
-              board.variation_san([options[0][0]]))
-        lasttoot_id = mastodon.status_post(tootstring,
-                                           in_reply_to_id=lasttoot_id,
-                                           visibility="public")["id"]
+              board.variation_san([options[0]]))
+        if not args.debug:
+            lasttoot_id = mastodon.status_post(tootstring,
+                                               in_reply_to_id=lasttoot_id,
+                                               visibility="public")["id"]
+            print(lasttoot_id, file=open("lastpost.id", "w"))
+        else:
+            print(tootstring)
     else:
         tootstring = "Options:\n"
         for i in range(len(options)):
-            tootstring = tootstring + "{}) {}\n".format(i+1, curBoard.variation_san([options[i][0]]))
-        opstrings = [curBoard.san(mv[0]) for mv in options]
+            tootstring = tootstring + "{}) {}\n".format(i+1, curBoard.variation_san([options[i]]))
+        opstrings = [curBoard.san(mv) for mv in options]
         if not args.debug:
             poll = mastodon.make_poll(opstrings, expires_in = args.poll_length)
 
@@ -251,6 +256,9 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
                                                in_reply_to_id=lasttoot_id,
                                                visibility="public")["id"]
             print(lasttoot_id, file=open("lastpost.id", "w"))
+        else:
+            print(tmsg)
+            print(tootstring)
 
 
 def get_vote_results(curBoard):
