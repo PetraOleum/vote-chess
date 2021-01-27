@@ -64,7 +64,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
     global lasttoot_id
     global args
     print_board(board)
-    if !(args.debug):
+    if not args.debug:
         img = mastodon.media_post("cur.png", description=
                                   "Position after {}\nFEN: {}".format(
                                       lastMove, board.fen()))
@@ -167,7 +167,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     global args
     global limithuman
     print_board(curBoard)
-    if !(args.debug):
+    if not args.debug:
         img = mastodon.media_post("cur.png", description=
                                   "Position after {}\nFEN: {}".format(
                                       last_Comp_Move, curBoard.fen()))
@@ -214,7 +214,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         for i in range(len(options)):
             tootstring = tootstring + "{}) {}\n".format(i+1, curBoard.variation_san([options[i][0]]))
         opstrings = [curBoard.san(mv[0]) for mv in options]
-        if !(args.debug):
+        if not args.debug:
             poll = mastodon.make_poll(opstrings, expires_in = args.poll_length)
 
         if last_Comp_Move == None:
@@ -222,7 +222,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         else:
             tmsg = ("Choose a move to reply to {}:").format(last_Comp_Move)
 
-        if !(args.debug):
+        if not args.debug:
             lasttoot_id = mastodon.status_post(tmsg, poll=poll,
                                                in_reply_to_id=lasttoot_id,
                                                visibility="public")["id"]
@@ -275,7 +275,7 @@ def load_game():
         # If exists but is ended, archive, continue
         if board.is_game_over(claim_draw=False):
             newGame = True
-            if !(args.debug):
+            if not args.debug:
                 print(curGame, file=open("archive.pgn", "a"), end="\n\n")
                 os.remove("current.pgn")
         else:
@@ -309,7 +309,7 @@ def load_game():
             pgn.headers["White"] = "Computer (depth {})".format(args.edist)
             pgn.headers["Black"] = "Mastodon"
         print(pgn)
-        if !(args.debug):
+        if not args.debug:
             print(pgn, file=open("current.pgn", "w"), end="\n\n")
         quit()
     return board
@@ -361,7 +361,7 @@ if not board.is_game_over(claim_draw=False):
             pgn.headers["White"] = "Computer"
             pgn.headers["Black"] = "Mastodon"
         # print(pgn)
-        if !(args.debug):
+        if not args.debug:
             print(pgn, file=open("current.pgn", "w"), end="\n\n")
     else:
         clean_endgame(board, lastMoveSan, humMoveSan)
