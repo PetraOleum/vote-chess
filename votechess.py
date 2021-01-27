@@ -188,9 +188,16 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         img = mastodon.media_post("cur.png", description=
                                   "Position after {}\nFEN: {}".format(
                                       last_Comp_Move, curBoard.fen()))
-    engine = chess.engine.SimpleEngine.popen_uci("stockfish")
-    moves = eng_rate(curBoard.legal_moves, curBoard, engine, limithuman)
-    engine.quit()
+    curlegmoves = curBoard.legal_moves
+    moves = []
+    if curBoard.fullmove < 10 and args.polyglot_book != "":
+        moves = opening_chioce(curBoard, args.polyglot_book, 4)
+        if moves[0] is None:
+            moves = []
+    if len(moves) < len(curlegmoves) and len(moves) < 5:
+        engine = chess.engine.SimpleEngine.popen_uci("stockfish")
+        moves = moves + eng_rate([mov for mov in curlegmoves if mov not in moves], curBoard, engine, limithuman)
+        engine.quit()
     if len(moves) < 5:
         options = moves
     else:
