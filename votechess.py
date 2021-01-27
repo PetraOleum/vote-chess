@@ -190,7 +190,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
                                       last_Comp_Move, curBoard.fen()))
     curlegmoves = curBoard.legal_moves
     moves = []
-    if curBoard.fullmove < 10 and args.polyglot_book != "":
+    if curBoard.fullmove_number < 10 and args.polyglot_book != "":
         moves = opening_chioce(curBoard, args.polyglot_book, 4)
         if moves[0] is None:
             moves = []
