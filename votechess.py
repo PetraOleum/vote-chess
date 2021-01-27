@@ -188,7 +188,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         img = mastodon.media_post("cur.png", description=
                                   "Position after {}\nFEN: {}".format(
                                       last_Comp_Move, curBoard.fen()))
-    curlegmoves = curBoard.legal_moves
+    curlegmoves = [m for m in curBoard.legal_moves]
     moves = []
     if curBoard.fullmove_number < 10 and args.polyglot_book != "":
         moves = opening_chioce(curBoard, args.polyglot_book, 4)
