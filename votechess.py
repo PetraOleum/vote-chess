@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description="Vote chess mastodon bot")
 parser.add_argument("--human-depth", type=int, default=10,
                     help="Depth to search when identifying human moves",
                     dest="hdist")
-parser.add_argument("-d", "--debug", dest="debug", action="store_true",
+parser.add_argument("--debug", dest="debug", action="store_true",
                     help="do not post to mastodon, do print boards")
 parser.add_argument("--engine-depth", type=int, default=10,
                     help="Depth to search when identifying engine moves",
