@@ -3,7 +3,8 @@ import chess.engine
 import chess.svg
 import chess.pgn
 import chess.polyglot
-from random import shuffle, sample, seed, choices
+from random import shuffle, sample, seed
+from numpy.random import choice
 from cairosvg import svg2png
 import datetime
 import os
@@ -48,7 +49,7 @@ limitengine = chess.engine.Limit(depth=args.edist)
 player = chess.WHITE
 lasttoot_id = None
 
-def opening_choice(board, bookfile):
+def opening_choice(board, bookfile, k=1):
     bweights = []
     bmoves = []
     try:
@@ -60,7 +61,7 @@ def opening_choice(board, bookfile):
             for entry in reader.find_all(board):
                 print(entry.move, entry.weight, entry.learn)
         if len(bmoves) > 0:
-            chosen = choices(bmoves, weights=bweights)[0]
+            chosen = choice(bmoves, k, replace = False, p=bweights)
             print("Move chosen: {}".format(board.variation_san([chosen])))
             return chosen
     except Exception as e:
@@ -302,7 +303,7 @@ def load_game():
         if player == chess.BLACK:
             lastMove = None
             if args.polyglot_book != "":
-                lastMove = opening_choice(board, args.polyglot_book)
+                lastMove = opening_choice(board, args.polyglot_book)[0]
             if lastMove is None:
                 lastMove = chess.Move.from_uci(sample(book, 1)[0])
             lastMoveSan = board.variation_san([lastMove])
@@ -343,7 +344,7 @@ if not board.is_game_over(claim_draw=False):
     # engmov = eng_choose()
     engmov = None
     if board.fullmove_number < 10 and args.polyglot_book != "":
-        engmov = opening_choice(board, args.polyglot_book)
+        engmov = opening_choice(board, args.polyglot_book)[0]
 
     if engmov is None:
         engine = chess.engine.SimpleEngine.popen_uci("stockfish")
