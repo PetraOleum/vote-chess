@@ -60,7 +60,9 @@ def opening_choice(board, bookfile):
             for entry in reader.find_all(board):
                 print(entry.move, entry.weight, entry.learn)
         if len(bmoves) > 0:
-            return choices(bmoves, weights=bweights)[0]
+            chosen = choices(bmoves, weights=bweights)[0]
+            print("Move chosen: {}".format(board.variation_san(chosen)))
+            return chosen
     except Exception as e:
         print("Failed to read opening book")
         print(e)
