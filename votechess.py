@@ -158,11 +158,11 @@ def eng_rate(legmoves, board, engine, lim):
 
 
 def eng_choose(legmoves, board, lim):
-    global args
-    if board.fullmove_number < 10 and args.polyglot_book != "":
-        opc = opening_choice(board, args.polyglot_book)
-        if opc is not None:
-            return opc
+    # global args
+    # if board.fullmove_number < 10 and args.polyglot_book != "":
+    #     opc = opening_choice(board, args.polyglot_book)
+    #     if opc is not None:
+    #         return opc
 
     engine = chess.engine.SimpleEngine.popen_uci("stockfish")
     moves = eng_rate(legmoves, board, engine, lim)
@@ -339,9 +339,15 @@ if not board.is_game_over(claim_draw=False):
     # 6. Make engine move
     # legmovs = list(board.legal_moves)
     # engmov = eng_choose()
-    engine = chess.engine.SimpleEngine.popen_uci("stockfish")
-    engmov = engine.play(board, limitengine).move
-    engine.quit()
+    engmov = None
+    if board.fullmove_number < 10 and args.polyglot_book != "":
+        engmov = opening_choice(board, args.polyglot_book)
+
+    if engmov is None:
+        engine = chess.engine.SimpleEngine.popen_uci("stockfish")
+        engmov = engine.play(board, limitengine).move
+        engine.quit()
+
     lastMove = engmov
     lastMoveSan = board.variation_san([lastMove])
     board.push(engmov)
