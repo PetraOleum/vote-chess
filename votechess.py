@@ -48,6 +48,24 @@ limitengine = chess.engine.Limit(depth=args.edist)
 player = chess.WHITE
 lasttoot_id = None
 
+def opening_choice(board, bookfile):
+    bweights = []
+    bmoves = []
+    try:
+        with chess.polyglot.open_reader(bookfile) as reader:
+            allbook = [e for e in reader.find_all(board)]
+            bweights = [e.weight for e in allbook]
+            bmoves = [e.move for e in allbook]
+            print("Opening book:")
+            for entry in reader.find_all(board):
+                print(entry.move, entry.weight, entry.learn)
+        if len(bmoves) > 0:
+            return choices(bmoves, weights=bweights)
+    except Exception as e:
+        print("Failed to read opening book")
+        print(e)
+    return None
+
 def print_board(board):
     global player
     lm = None
@@ -141,22 +159,10 @@ def eng_rate(legmoves, board, engine, lim):
 
 def eng_choose(legmoves, board, lim):
     global args
-    bweights = []
-    bmoves = []
-    try:
-        if board.fullmove_number < 10 and args.polyglot_book != "":
-            with chess.polyglot.open_reader(args.polyglot_book) as reader:
-                allbook = reader.find_all(board)
-                bweights = [e.weight for e in allbook]
-                bmoves = [e.move for e in allbook]
-                print("Opening book:")
-                for entry in reader.find_all(board):
-                    print(entry.move, entry.weight, entry.learn)
-        if len(bmoves) > 0:
-            return choices(bmoves, weights=bweights)
-    except Exception as e:
-        print("Failed to read opening book")
-        print(e)
+    if board.fullmove_number < 10 and args.polyglot_book != "":
+        opc = opening_choice(board, args.polyglot_book)
+        if opc is not None:
+            return opc
 
     engine = chess.engine.SimpleEngine.popen_uci("stockfish")
     moves = eng_rate(legmoves, board, engine, lim)
@@ -233,7 +239,6 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
 
 
 def get_vote_results(curBoard):
-    global book
     global lasttoot_id
     global mastodon
     global limitengine
@@ -250,10 +255,7 @@ def get_vote_results(curBoard):
     except Exception as e:
         print("Failed to get poll results")
         print(e)
-        if len(curBoard.move_stack) > 0:
-            return eng_choose(curBoard.legal_moves, curBoard, limitengine)
-        else:
-            return chess.Move.from_uci(sample(book, 1)[0])
+        return eng_choose(curBoard.legal_moves, curBoard, limitengine)
 
 
 
@@ -296,7 +298,11 @@ def load_game():
         player = sample([chess.WHITE, chess.BLACK], 1)[0]
         lastMoveSan = None
         if player == chess.BLACK:
-            lastMove = chess.Move.from_uci(sample(book, 1)[0])
+            lastMove = None
+            if args.polyglot_book != "":
+                lastMove = opening_choice(board, args.polyglot_book)
+            if lastMove is None:
+                lastMove = chess.Move.from_uci(sample(book, 1)[0])
             lastMoveSan = board.variation_san([lastMove])
             board.push(lastMove)
         set_up_vote(lastMoveSan, board, None)
