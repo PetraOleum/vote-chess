@@ -2,7 +2,8 @@ import chess
 import chess.engine
 import chess.svg
 import chess.pgn
-from random import shuffle, sample, seed
+import chess.polyglot
+from random import shuffle, sample, seed, choices
 from cairosvg import svg2png
 import datetime
 import os
@@ -15,6 +16,8 @@ parser = argparse.ArgumentParser(description="Vote chess mastodon bot")
 parser.add_argument("--human-depth", type=int, default=10,
                     help="Depth to search when identifying human moves",
                     dest="hdist")
+parser.add_argument("-d", "--debug", dest="debug", action="store_true",
+                    help="do not post to mastodon, do print boards")
 parser.add_argument("--engine-depth", type=int, default=10,
                     help="Depth to search when identifying engine moves",
                     dest="edist")
@@ -23,6 +26,9 @@ parser.add_argument("-d", "--dir", default=".", dest="dir",
 parser.add_argument("-p", "--poll-length", default=3420, type=int,
                     dest="poll_length",
                     help="Number of seconds for poll to last")
+parser.add_argument("--polyglot", default="",
+                    dest="polyglot_book",
+                    help="Polyglot opening book")
 
 args = parser.parse_args()
 os.chdir(args.dir)
@@ -58,9 +64,10 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
     global lasttoot_id
     global args
     print_board(board)
-    img = mastodon.media_post("cur.png", description=
-                              "Position after {}\nFEN: {}".format(
-                                  lastMove, board.fen()))
+    if !args.debug:
+        img = mastodon.media_post("cur.png", description=
+                                  "Position after {}\nFEN: {}".format(
+                                      lastMove, board.fen()))
     res = board.result(claim_draw=False)
     if adjud:
         res = "1/2-1/2"
@@ -109,12 +116,16 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
         pgn.headers["White"] = "Computer (depth {})".format(args.edist)
         pgn.headers["Black"] = "Mastodon"
     print(egmsg)
-    lasttoot_id = mastodon.status_post(egmsg,
-                                       in_reply_to_id=lasttoot_id,
-                                       media_ids=img,
-                                       visibility="public")["id"]
-    print(pgn, file=open("archive.pgn", "a"), end="\n\n")
-    os.remove("current.pgn")
+    if args.debug:
+        print(egmsg)
+        print(board)
+    else:
+        lasttoot_id = mastodon.status_post(egmsg,
+                                           in_reply_to_id=lasttoot_id,
+                                           media_ids=img,
+                                           visibility="public")["id"]
+        print(pgn, file=open("archive.pgn", "a"), end="\n\n")
+        os.remove("current.pgn")
 
 
 def eng_rate(legmoves, board, engine, lim):
@@ -129,6 +140,21 @@ def eng_rate(legmoves, board, engine, lim):
 
 
 def eng_choose(legmoves, board, lim):
+    global args
+    bweights = []
+    bmoves = []
+    try:
+        if board.fullmove_number < 10 and args.polyglot_book != "":
+            with chess.polyglot.open_reader(args.polyglot_book) as reader:
+                allbook = reader.find_all(board)
+                bweights = [e.weight for e in allbook]
+                bmoves = [e.move for e in allbook]
+        if len(bmoves > 0):
+            return choices(bmoves, weights=bweights)
+    except Exception as e:
+        print("Failed to read opening book")
+        print(e)
+
     engine = chess.engine.SimpleEngine.popen_uci("stockfish")
     moves = eng_rate(legmoves, board, engine, lim)
     engine.quit()
@@ -141,9 +167,10 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     global args
     global limithuman
     print_board(curBoard)
-    img = mastodon.media_post("cur.png", description=
-                              "Position after {}\nFEN: {}".format(
-                                  last_Comp_Move, curBoard.fen()))
+    if !args.debug:
+        img = mastodon.media_post("cur.png", description=
+                                  "Position after {}\nFEN: {}".format(
+                                      last_Comp_Move, curBoard.fen()))
     engine = chess.engine.SimpleEngine.popen_uci("stockfish")
     moves = eng_rate(curBoard.legal_moves, curBoard, engine, limithuman)
     engine.quit()
@@ -167,11 +194,14 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
 
     print(tootstring)
 
-    lasttoot_id = mastodon.status_post(tootstring,
-                                       in_reply_to_id=lasttoot_id,
-                                       media_ids=img,
-                                       visibility="public")["id"]
-    sleep(50)
+    if args.debug:
+        print(curBoard)
+    else:
+        lasttoot_id = mastodon.status_post(tootstring,
+                                           in_reply_to_id=lasttoot_id,
+                                           media_ids=img,
+                                           visibility="public")["id"]
+        sleep(50)
     tootstring = ""
     if len(options) == 1:
         tootstring = "Only one legal move: {}".format(
@@ -184,16 +214,19 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         for i in range(len(options)):
             tootstring = tootstring + "{}) {}\n".format(i+1, curBoard.variation_san([options[i][0]]))
         opstrings = [curBoard.san(mv[0]) for mv in options]
-        poll = mastodon.make_poll(opstrings, expires_in = args.poll_length)
+        if !args.debug:
+            poll = mastodon.make_poll(opstrings, expires_in = args.poll_length)
+
         if last_Comp_Move == None:
             tmsg = "Choose a move to play:"
         else:
             tmsg = ("Choose a move to reply to {}:").format(last_Comp_Move)
 
-        lasttoot_id = mastodon.status_post(tmsg, poll=poll,
-                                           in_reply_to_id=lasttoot_id,
-                                           visibility="public")["id"]
-        print(lasttoot_id, file=open("lastpost.id", "w"))
+        if !args.debug:
+            lasttoot_id = mastodon.status_post(tmsg, poll=poll,
+                                               in_reply_to_id=lasttoot_id,
+                                               visibility="public")["id"]
+            print(lasttoot_id, file=open("lastpost.id", "w"))
 
 
 def get_vote_results(curBoard):
@@ -226,6 +259,7 @@ def load_game():
     global lastMove
     global book
     global lasttoot_id
+    global args
     # 1. Test if game exists, is not ended
     newGame = False
     try:
@@ -241,8 +275,9 @@ def load_game():
         # If exists but is ended, archive, continue
         if board.is_game_over(claim_draw=False):
             newGame = True
-            print(curGame, file=open("archive.pgn", "a"), end="\n\n")
-            os.remove("current.pgn")
+            if !args.debug:
+                print(curGame, file=open("archive.pgn", "a"), end="\n\n")
+                os.remove("current.pgn")
         else:
             player = board.turn
             lastMove = None
@@ -274,7 +309,8 @@ def load_game():
             pgn.headers["White"] = "Computer (depth {})".format(args.edist)
             pgn.headers["Black"] = "Mastodon"
         print(pgn)
-        print(pgn, file=open("current.pgn", "w"), end="\n\n")
+        if !args.debug:
+            print(pgn, file=open("current.pgn", "w"), end="\n\n")
         quit()
     return board
 
@@ -325,7 +361,8 @@ if not board.is_game_over(claim_draw=False):
             pgn.headers["White"] = "Computer"
             pgn.headers["Black"] = "Mastodon"
         # print(pgn)
-        print(pgn, file=open("current.pgn", "w"), end="\n\n")
+        if !args.debug:
+            print(pgn, file=open("current.pgn", "w"), end="\n\n")
     else:
         clean_endgame(board, lastMoveSan, humMoveSan)
 else:
