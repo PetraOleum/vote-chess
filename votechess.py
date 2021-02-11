@@ -131,7 +131,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
         if lastMbut1 == None:
             egmsg = egmsg + "With {} the humans claim a draw.\n".format(lastMove)
         else:
-            egmsg = egmsg + "The computer replies to {} with {}, and claims a draw.".format(
+            egmsg = egmsg + "The computer replies to {} with {}, and claims a draw.\n".format(
                 lastMbut1, lastMove)
 
     pgn = chess.pgn.Game.from_board(board)
