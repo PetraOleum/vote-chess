@@ -394,16 +394,15 @@ if not board.is_game_over(claim_draw=False) and bool(humMove):
     board.push(engmov)
     if not board.is_game_over(claim_draw=False):
         try:
-        if board.halfmove_clock > 20 or board.halfmove_clock < 2:
-            if len(board.piece_map()) < 8:
-                fenmod = board.fen().replace(" ", "_")
-                apiurl = "http://tablebase.lichess.ovh/standard?fen="
-                r = requests.get(url="{}{}".format(apiurl, fenmod))
-                if r.json()["wdl"] == 0:
-                    print("Tablebase draw")
-                    clean_endgame(board, lastMoveSan, humMoveSan, True)
-                    quit()
-
+            if board.halfmove_clock > 20 or board.halfmove_clock < 2:
+                if len(board.piece_map()) < 8:
+                    fenmod = board.fen().replace(" ", "_")
+                    apiurl = "http://tablebase.lichess.ovh/standard?fen="
+                    r = requests.get(url="{}{}".format(apiurl, fenmod))
+                    if r.json()["wdl"] == 0:
+                        print("Tablebase draw")
+                        clean_endgame(board, lastMoveSan, humMoveSan, True)
+                        quit()
         except Exception as e:
             print("Failed to get adjudication")
             print(e)
