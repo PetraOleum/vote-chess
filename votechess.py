@@ -393,7 +393,7 @@ if not board.is_game_over(claim_draw=False) and bool(humMove):
     lastMoveSan = board.variation_san([lastMove])
     board.push(engmov)
     if not board.is_game_over(claim_draw=False):
-        if board.halfmove_clock > 10:
+        if board.halfmove_clock > 20 or board.halfmove_clock < 2:
             if len(board.piece_map()) < 8:
                 fenmod = board.fen().replace(" ", "_")
                 apiurl = "http://tablebase.lichess.ovh/standard?fen="
