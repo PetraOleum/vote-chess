@@ -98,7 +98,13 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
     if adjud:
         res = "1/2-1/2"
     egmsg = ""
-    if board.is_checkmate():
+    if lastMove == "resignation":
+        egmsg = "The humans resign!"
+        if board.turn == chess.WHITE:
+            res = "0-1"
+        else:
+            res = "1-0"
+    elif board.is_checkmate():
         egmsg = "Checkmate!\n"
         if lastMbut1 == None:
             egmsg = egmsg + "With {} the humans win!\n".format(lastMove)
@@ -157,10 +163,13 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
 def eng_rate(legmoves, board, engine, lim):
     moves = list()
     for mv in legmoves:
-        board.push(mv)
-        sc = engine.analyse(board, lim)["score"]
-        board.pop()
-        moves.append((mv, sc.relative))
+        if bool(mv):
+            board.push(mv)
+            sc = engine.analyse(board, lim)["score"]
+            board.pop()
+            moves.append((mv, sc.relative))
+        else:
+            moves.append((mv, chess.engine.MateGiven))
     moves.sort(key = lambda tup: tup[1])
     return moves
 
@@ -199,6 +208,9 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         emovs = eng_rate([mov for mov in curlegmoves if mov not in moves], curBoard, engine, limithuman)
         moves = moves + [m[0] for m in emovs]
         engine.quit()
+        # resign if more than 5 pawn-equivalents down
+        if emovs[0][1] > chess.engine.Cp(-500):
+            moves = [chess.Move.null()] + moves
     if len(moves) < 5:
         options = moves
     else:
@@ -241,8 +253,9 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     else:
         tootstring = "Options:\n"
         for i in range(len(options)):
-            tootstring = tootstring + "{}) {}\n".format(i+1, curBoard.variation_san([options[i]]))
-        opstrings = [curBoard.san(mv) for mv in options]
+            tootstring = tootstring + "{}) {}\n".format(i+1, curBoard.variation_san([options[i]]) if
+                              bool(options[i]) else "Resign")
+        opstrings = [(curBoard.san(mv) if bool(mv) else "Resign") for mv in options]
         if not args.debug:
             poll = mastodon.make_poll(opstrings, expires_in = args.poll_length)
 
@@ -272,7 +285,8 @@ def get_vote_results(curBoard):
         print("Got poll")
         votes = [mv["votes_count"] for mv in poll["options"]]
         mvotes = max(votes)
-        choices = [curBoard.parse_san(mv["title"]) for mv in poll["options"] if
+        choices = [(curBoard.parse_san(mv["title"]) if mv["title"] != "Resign"
+                   else chess.Move.null()) for mv in poll["options"] if
                    mv["votes_count"] == mvotes]
         return eng_choose(choices, curBoard, limitengine)
     except Exception as e:
@@ -355,10 +369,14 @@ if len(legmovs) == 1:
 else:
     # 4. Otherwise, gather results from thread for game. If tie, break with engine analysis, make move
     humMove = get_vote_results(board)
-humMoveSan = board.variation_san([humMove])
-board.push(humMove)
 
-if not board.is_game_over(claim_draw=False):
+if bool(humMove):
+    humMoveSan = board.variation_san([humMove])
+    board.push(humMove)
+else:
+    humMoveSan = "resignation"
+
+if not board.is_game_over(claim_draw=False) and bool(humMove):
     # 6. Make engine move
     # legmovs = list(board.legal_moves)
     # engmov = eng_choose()
