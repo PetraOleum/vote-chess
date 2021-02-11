@@ -209,7 +209,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         moves = moves + [m[0] for m in emovs]
         engine.quit()
         # resign if more than 5 pawn-equivalents down
-        if emovs[0][1] > chess.engine.Cp(-500):
+        if emovs[0][1] > chess.engine.Cp(500):
             moves = [chess.Move.null()] + moves
     if len(moves) < 5:
         options = moves
@@ -393,6 +393,7 @@ if not board.is_game_over(claim_draw=False) and bool(humMove):
     lastMoveSan = board.variation_san([lastMove])
     board.push(engmov)
     if not board.is_game_over(claim_draw=False):
+        try:
         if board.halfmove_clock > 20 or board.halfmove_clock < 2:
             if len(board.piece_map()) < 8:
                 fenmod = board.fen().replace(" ", "_")
@@ -402,6 +403,10 @@ if not board.is_game_over(claim_draw=False) and bool(humMove):
                     print("Tablebase draw")
                     clean_endgame(board, lastMoveSan, humMoveSan, True)
                     quit()
+
+        except Exception as e:
+            print("Failed to get adjudication")
+            print(e)
         set_up_vote(lastMoveSan, board, humMoveSan)
         # Save board
         print("saving")
