@@ -99,7 +99,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
         res = "1/2-1/2"
     egmsg = ""
     if lastMove == "resignation":
-        egmsg = "The humans resign!"
+        egmsg = "The humans resign!\n"
         if board.turn == chess.WHITE:
             res = "0-1"
         else:
