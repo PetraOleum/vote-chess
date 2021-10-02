@@ -137,3 +137,5 @@ lastpost.id
 log.txt
 books/
 test.py
+# Config files
+*.json
