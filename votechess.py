@@ -194,19 +194,18 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
     print(egmsg)
     if args.debug:
         print(board)
-        config["pgn"] = None
     else:
         lasttoot_id = mastodon.status_post(egmsg,
                                            in_reply_to_id=lasttoot_id,
                                            media_ids=img,
                                            visibility="public")["id"]
         config["postid"] = lasttoot_id
-        if config.get("archive_file") is not None:
-            print(pgn, file=open(config.get("archive_file"), "a"), end="\n\n")
-        else:
-            print("No archive file!")
-            print(pgn)
-        config["pgn"] = None
+    if config.get("archive_file") is not None:
+        print(pgn, file=open(config.get("archive_file"), "a"), end="\n\n")
+    else:
+        print("No archive file!")
+        print(pgn)
+    config["pgn"] = None
     config["human"]["colour"] = "WHITE" if config["human"].get("colour") == "BLACK" else "BLACK"
     if args.hdist is not None:
         config["human"]["depth"] = args.hdist
