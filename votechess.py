@@ -199,7 +199,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
                                            visibility="public")["id"]
         config["postid"] = lasttoot_id
         if config.get("archive_file") is not None:
-            print(pgn, file=open(config.get("archive.file"), "a"), end="\n\n")
+            print(pgn, file=open(config.get("archive_file"), "a"), end="\n\n")
         config["pgn"] = None
     config["human"]["colour"] = "WHITE" if config["human"].get("colour") == "BLACK" else "BLACK"
     if args.hdist is not None:
