@@ -115,7 +115,7 @@ def print_board(board, choices = None):
         lm = board.peek()
     board_svg = chess.svg.board(board, flipped = (player == chess.BLACK),
                                 lastmove=lm,
-                                #colors = config.get("board_colours"),
+                                colors = config.get("board_colours"),
                                 arrows=arrows
                                )
     svg2png(bytestring=board_svg,write_to=config.get("image_file"), scale=1.5)
@@ -284,7 +284,7 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     else:
         tootstring = "Poll result: {}\n".format(lastHuman)
     if last_Comp_Move != None:
-        tootstring = tootstring + "Computer move from {}: {}".format(
+        tootstring = tootstring + "{}'s move: {}".format(
             config["engine"].get("name"), last_Comp_Move)
 
     print(tootstring)
