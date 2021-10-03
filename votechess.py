@@ -114,8 +114,10 @@ def print_board(board, choices = None):
     if len(board.move_stack) > 0:
         lm = board.peek()
     board_svg = chess.svg.board(board, flipped = (player == chess.BLACK),
-                                lastmove=lm, colors =
-                                config.get("board_colours"), arrows=arrows)
+                                lastmove=lm,
+                                #colors = config.get("board_colours"),
+                                arrows=arrows
+                               )
     svg2png(bytestring=board_svg,write_to=config.get("image_file"), scale=1.5)
 
 
