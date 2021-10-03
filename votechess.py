@@ -221,11 +221,17 @@ def eng_rate(legmoves, board, engine, lim):
     for mv in legmoves:
         if bool(mv):
             board.push(mv)
-            sc = engine.analyse(board, lim)["score"]
+            if board.is_checkmate():
+                sc = chess.engine.Mate(-0)
+            elif board.is_stalemate():
+                sc = chess.engine.Cp(0)
+            else:
+                sc = engine.analyse(board,
+                                    lim)["score"].relative
             board.pop()
-            moves.append((mv, sc.relative))
+            moves.append((mv, sc))
         else:
-            moves.append((mv, chess.engine.MateGiven))
+            moves.append((mv, chess.engine.Mate(0)))
     moves.sort(key = lambda tup: tup[1])
     return moves
 
