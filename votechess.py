@@ -203,6 +203,9 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
         config["postid"] = lasttoot_id
         if config.get("archive_file") is not None:
             print(pgn, file=open(config.get("archive_file"), "a"), end="\n\n")
+        else:
+            print("No archive file!")
+            print(pgn)
         config["pgn"] = None
     config["human"]["colour"] = "WHITE" if config["human"].get("colour") == "BLACK" else "BLACK"
     if args.hdist is not None:
@@ -384,9 +387,11 @@ def load_game():
         # If exists but is ended, archive, continue
         if board.is_game_over(claim_draw=False):
             newGame = True
-            if not args.debug:
-                if config.get("archive_file") is not None:
-                    print(curGame, file=open(config.get("archive_file"), "a"), end="\n\n")
+            if config.get("archive_file") is not None:
+                print(curGame, file=open(config.get("archive_file"), "a"), end="\n\n")
+            else:
+                print("No archive file!")
+                print(pgn)
             config["pgn"] = None
         else:
             player = board.turn
