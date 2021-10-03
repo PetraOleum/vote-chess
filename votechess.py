@@ -128,6 +128,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
     global args
     global config
     print_board(board)
+    e_name = config["engine"].get("name")
     if not args.debug:
         img = mastodon.media_post(config.get("image_file"), description=
                                   "Position after {}\nFEN: {}".format(
@@ -151,7 +152,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
             egmsg = egmsg + "With {} the humans win!\n".format(lastMove)
             config["human"]["score"] = config["human"]["score"] + 1.0
         else:
-            egmsg = egmsg + "The computer replies to {} with {}\n".format(lastMbut1,
+            egmsg = egmsg + "{} replies to {} with {}\n".format(e_name, lastMbut1,
                                                               lastMove)
             config["engine"]["score"] = config["engine"]["score"] + 1.0
     elif board.is_stalemate():
@@ -160,8 +161,8 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
         if lastMbut1 == None:
             egmsg = egmsg + "With {} the humans stalemate the computer!\n".format(lastMove)
         else:
-            egmsg = egmsg + "The computer replies to {} with {}. Stalemate!\n".format(
-                lastMbut1, lastMove)
+            egmsg = egmsg + "{} replies to {} with {}. Stalemate!\n".format(
+                e_name, lastMbut1, lastMove)
     elif adjud:
         config["human"]["score"] = config["human"]["score"] + 0.5
         config["engine"]["score"] = config["engine"]["score"] + 0.5
@@ -169,8 +170,8 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
             egmsg = egmsg + ("After {} the position is adjudicated to a "
                              "tablebase draw.\n").format(lastMove)
         else:
-            egmsg = egmsg + "The computer replies to {} with {}.\n".format(
-                lastMbut1, lastMove)
+            egmsg = egmsg + "{} replies to {} with {}.\n".format(
+                e_name, lastMbut1, lastMove)
             egmsg = egmsg + "The position is adjudicated to a tablebase draw.\n"
         fenmod = board.fen().replace(" ", "_")
         egmsg = egmsg + "https://syzygy-tables.info/?fen={}\n".format(fenmod)
@@ -180,8 +181,8 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
         if lastMbut1 == None:
             egmsg = egmsg + "With {} the humans claim a draw.\n".format(lastMove)
         else:
-            egmsg = egmsg + "The computer replies to {} with {}, and claims a draw.\n".format(
-                lastMbut1, lastMove)
+            egmsg = egmsg + "{} replies to {} with {}, and claims a draw.\n".format(
+                e_name, lastMbut1, lastMove)
 
     pgn = chess.pgn.Game.from_board(board)
     pgn.headers["Result"] = res
