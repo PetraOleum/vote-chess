@@ -13,24 +13,22 @@ from time import sleep
 import argparse
 import requests
 import json
+import io
 
 parser = argparse.ArgumentParser(description="Vote chess mastodon bot")
-parser.add_argument("-c", "--config-file", help="Config filepath (json)",
+parser.add_argument(help="Config filepath (json)",
                     dest="config_file")
+parser.add_argument("--debug", dest="debug", action="store_true",
+                    help="do not post to mastodon, do print boards")
 parser.add_argument("--human-depth", type=int,
                     help="Depth to search when identifying human moves",
                     dest="hdist")
-parser.add_argument("--debug", dest="debug", action="store_true",
-                    help="do not post to mastodon, do print boards")
 parser.add_argument("--engine-depth", type=int,
                     help="Depth to search when identifying engine moves",
                     dest="edist")
 parser.add_argument("-d", "--dir", default=".", dest="dir",
                     help="Directory to operate in")
-parser.add_argument("-p", "--poll-length", type=int,
-                    dest="poll_length",
-                    help="Number of seconds for poll to last")
-parser.add_argument("--polyglot", default="",
+parser.add_argument("--polyglot",
                     dest="polyglot_book",
                     help="Polyglot opening book")
 
@@ -47,10 +45,6 @@ configfp = args.config_file
 with open(configfp, "r") as configfile:
     config = json.load(configfile)
 
-print(config)
-
-stop()
-
 seed()
 book = ["e2e4", "d2d4", "g1f3", "c2c4", "g2g3"]
 lastMove = None
@@ -65,7 +59,7 @@ def save_config():
     global config
     global args
     with open(args.config_file, "w") as configfile:
-        json.dump(config, configfile)
+        json.dump(config, configfile, indent=2)
 
 
 def pgn_standard_headers(pgn, player):
@@ -82,6 +76,7 @@ def pgn_standard_headers(pgn, player):
         pgn.headers["White"] = "{} (depth {})".format(
             config["engine"].get("name"), config["engine"].get("depth"))
         pgn.headers["Black"] = config["human"].get("name")
+    pgn.headers["Round"] = config.get("round")
     return pgn
 
 
@@ -110,14 +105,18 @@ def opening_choice(board, bookfile, k=1):
         print(e)
     return [None]
 
-def print_board(board):
+def print_board(board, choices = None):
     global player
+    global config
     lm = None
+    arrows = [] if choices is None or config.get("show_arrows") != True else [(move.from_square, move.to_square)
+                                           for move in choices if move != chess.Move.from_uci("0000")]
     if len(board.move_stack) > 0:
         lm = board.peek()
     board_svg = chess.svg.board(board, flipped = (player == chess.BLACK),
-                                lastmove=lm)
-    svg2png(bytestring=board_svg,write_to='cur.png', scale=1.5)
+                                lastmove=lm, colors =
+                                config.get("board_colours"), arrows=arrows)
+    svg2png(bytestring=board_svg,write_to=config.get("image_file"), scale=1.5)
 
 
 def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
@@ -128,7 +127,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
     global config
     print_board(board)
     if not args.debug:
-        img = mastodon.media_post("cur.png", description=
+        img = mastodon.media_post(config.get("image_file"), description=
                                   "Position after {}\nFEN: {}".format(
                                       lastMove, board.fen()))
     res = board.result(claim_draw=False)
@@ -191,9 +190,8 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
     pgn = pgn_standard_headers(pgn, player)
     print(egmsg)
     if args.debug:
-        print(egmsg)
         print(board)
-        os.remove(config.get("pgn_file"))
+        config["pgn"] = None
     else:
         lasttoot_id = mastodon.status_post(egmsg,
                                            in_reply_to_id=lasttoot_id,
@@ -202,7 +200,16 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
         config["postid"] = lasttoot_id
         if config.get("archive_file") is not None:
             print(pgn, file=open(config.get("archive.file"), "a"), end="\n\n")
-        os.remove(config.get("pgn_file"))
+        config["pgn"] = None
+    config["human"]["colour"] = "WHITE" if config["human"].get("colour") == "BLACK" else "BLACK"
+    if args.hdist is not None:
+        config["human"]["depth"] = args.hdist
+    if args.edist is not None:
+        config["engine"]["depth"] = args.edist
+    if args.polyglot_book is not None:
+        config["polyglot_book"] = args.polyglot_book
+    config["poll_options"] = None
+    config["round"] = config.get("round") + 1
     save_config()
 
 
@@ -240,11 +247,6 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
     global args
     global config
     global limithuman
-    print_board(curBoard)
-    if not args.debug:
-        img = mastodon.media_post("cur.png", description=
-                                  "Position after {}\nFEN: {}".format(
-                                      last_Comp_Move, curBoard.fen()))
     curlegmoves = [m for m in curBoard.legal_moves]
     moves = []
     if curBoard.fullmove_number < 10 and config.get("polyglot_book") is not None:
@@ -266,6 +268,11 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         # options = moves[:3]
         # options.extend(moves[-1:])
     shuffle(options)
+    print_board(curBoard, choices=options)
+    if not args.debug:
+        img = mastodon.media_post(config.get("image_file"), description=
+                                  "Position after {}\nFEN: {}".format(
+                                      last_Comp_Move, curBoard.fen()))
 
     tootstring = ""
 
@@ -300,12 +307,14 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         else:
             print(tootstring)
             config["postid"] = None
+        config["poll_options"] = None
     else:
         tootstring = "Options:\n"
         for i in range(len(options)):
             tootstring = tootstring + "{}) {}\n".format(i+1, curBoard.variation_san([options[i]]) if
                               bool(options[i]) else "Resign")
         opstrings = [(curBoard.san(mv) if bool(mv) else "Resign") for mv in options]
+        config["poll_options"] = opstrings
         if not args.debug:
             poll = mastodon.make_poll(opstrings, expires_in = config.get("poll_length"))
 
@@ -360,7 +369,7 @@ def load_game():
     newGame = False
     lasttoot_id = config.get("postid")
     try:
-        pgn = open(config.get("pgn_file"))
+        pgn = io.StringIO(config.get("pgn"))
         curGame = chess.pgn.read_game(pgn)
         board = curGame.end().board()
         # If exists but is ended, archive, continue
@@ -369,7 +378,7 @@ def load_game():
             if not args.debug:
                 if config.get("archive_file") is not None:
                     print(curGame, file=open(config.get("archive_file"), "a"), end="\n\n")
-                os.remove(config.get("pgn_file"))
+            config["pgn"] = None
         else:
             player = board.turn
             lastMove = None
@@ -383,13 +392,12 @@ def load_game():
         config["postid"] = None
         lastMove = None
         board = chess.Board()
-        player = chess.WHITE if config["human"].get("colour") == "BLACK" else chess.BLACK
-        config["human"]["player"] = "WHITE" if player == chess.WHITE else "BLACK"
+        player = chess.BLACK if config["human"].get("colour") == "BLACK" else chess.WHITE
         lastMoveSan = None
         if player == chess.BLACK:
             lastMove = None
-            if args.polyglot_book != "":
-                lastMove = opening_choice(board, args.polyglot_book)[0]
+            if config.get("polyglot_book") is not None:
+                lastMove = opening_choice(board, config.get("polyglot_book"))[0]
             if lastMove is None:
                 lastMove = chess.Move.from_uci(sample(book, 1)[0])
             lastMoveSan = board.variation_san([lastMove])
@@ -399,8 +407,7 @@ def load_game():
         pgn.headers["Result"] = "*"
         pgn = pgn_standard_headers(pgn, player)
         print(pgn)
-        if not args.debug:
-            print(pgn, file=open(config.get("pgn_file"), "w"), end="\n\n")
+        config["pgn"] = str(pgn)
         save_config()
         quit()
     return board
@@ -426,8 +433,8 @@ if not board.is_game_over(claim_draw=False) and bool(humMove):
     # legmovs = list(board.legal_moves)
     # engmov = eng_choose()
     engmov = None
-    if board.fullmove_number < 10 and args.polyglot_book != "":
-        engmov = opening_choice(board, args.polyglot_book)[0]
+    if board.fullmove_number < 10 and config.get("polyglot_book") is not None:
+        engmov = opening_choice(board, config.get("polyglot_book"))[0]
 
     if engmov is None:
         engine = chess.engine.SimpleEngine.popen_uci(config["engine"].get("path"))
@@ -444,7 +451,8 @@ if not board.is_game_over(claim_draw=False) and bool(humMove):
                     fenmod = board.fen().replace(" ", "_")
                     apiurl = "http://tablebase.lichess.ovh/standard?fen="
                     r = requests.get(url="{}{}".format(apiurl, fenmod))
-                    if r.json()["wdl"] == 0:
+                    res = r.json()
+                    if res.get("wdl") == 0 or res.get("category") == "draw":
                         print("Tablebase draw")
                         clean_endgame(board, lastMoveSan, humMoveSan, True)
                         quit()
@@ -458,7 +466,7 @@ if not board.is_game_over(claim_draw=False) and bool(humMove):
         pgn.headers["Result"] = "*"
         pgn = pgn_standard_headers(pgn, player)
         # print(pgn)
-        print(pgn, file=open(config.get("pgn_file"), "w"), end="\n\n")
+        config["pgn"] = str(pgn)
         save_config()
     else:
         clean_endgame(board, lastMoveSan, humMoveSan)

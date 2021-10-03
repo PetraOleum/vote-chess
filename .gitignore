@@ -139,3 +139,4 @@ books/
 test.py
 # Config files
 *.json
+!example.json
