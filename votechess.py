@@ -233,10 +233,19 @@ def eng_rate(legmoves, board, engine, lim):
             else:
                 sc = engine.analyse(board,
                                     lim)["score"].relative
+            halfmove = board.halfmove_clock
             board.pop()
-            moves.append((mv, sc))
+            moves.append((mv, sc, halfmove))
         else:
-            moves.append((mv, chess.engine.Mate(0)))
+            moves.append((mv, chess.engine.Mate(0), 0))
+    # First sort by halfmoves, i.e. rank moves that capture or move a pawn
+    # ahead
+    moves.sort(key = lambda tup: tup[2])
+    # Then sort by engine score:
+    #  - Negatively rated moves are bad *for the player whose turn it will be
+    #  next*, so the one at position 0 will be best for the player now to move
+    #  - Ties (especially draws) are broken primarily by the half move clock
+    #  being reset, with previous sort
     moves.sort(key = lambda tup: tup[1])
     return moves
 
