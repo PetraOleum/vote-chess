@@ -31,6 +31,9 @@ parser.add_argument("-d", "--dir", default=".", dest="dir",
 parser.add_argument("--polyglot",
                     dest="polyglot_book",
                     help="Polyglot opening book")
+parser.add_argment("--claim50", dest="claim50", action="store_true",
+                   help="Claim draws at 3-fold repetition and 50 moves, rather "
+                   "than waiting for 5-fold repetition and 75 moves")
 
 args = parser.parse_args()
 os.chdir(args.dir)
@@ -133,7 +136,7 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
         img = mastodon.media_post(config.get("image_file"), description=
                                   "Position after {}\nFEN: {}".format(
                                       lastMove, board.fen()))
-    res = board.result(claim_draw=False)
+    res = board.result(claim_draw=args.claim50)
     if adjud:
         res = "1/2-1/2"
         config["human"]["score"] = config["human"]["score"] + 0.5
@@ -396,7 +399,7 @@ def load_game():
         curGame = chess.pgn.read_game(pgn)
         board = curGame.end().board()
         # If exists but is ended, archive, continue
-        if board.is_game_over(claim_draw=False):
+        if board.is_game_over(claim_draw=args.claim50):
             newGame = True
             if config.get("archive_file") is not None:
                 arfile = config.get("archive_file")
@@ -456,7 +459,7 @@ if bool(humMove):
 else:
     humMoveSan = "resignation"
 
-if not board.is_game_over(claim_draw=False) and bool(humMove):
+if not board.is_game_over(claim_draw=args.claim50) and bool(humMove):
     # 6. Make engine move
     # legmovs = list(board.legal_moves)
     # engmov = eng_choose()
@@ -472,7 +475,7 @@ if not board.is_game_over(claim_draw=False) and bool(humMove):
     lastMove = engmov
     lastMoveSan = board.variation_san([lastMove])
     board.push(engmov)
-    if not board.is_game_over(claim_draw=False):
+    if not board.is_game_over(claim_draw=args.claim50):
         try:
             if board.halfmove_clock > 20 or board.halfmove_clock < 2:
                 if len(board.piece_map()) < 8:
