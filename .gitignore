@@ -132,7 +132,8 @@ dmypy.json
 
 *.secret
 *.pgn
-cur.png
+*.pgn.debug
+*.png
 lastpost.id
 log.txt
 books/

@@ -201,7 +201,10 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
                                            visibility="public")["id"]
         config["postid"] = lasttoot_id
     if config.get("archive_file") is not None:
-        print(pgn, file=open(config.get("archive_file"), "a"), end="\n\n")
+        arfile = config.get("archive_file")
+        if args.debug:
+            arfile = arfile + ".debug"
+        print(pgn, file=open(arfile, "a"), end="\n\n")
     else:
         print("No archive file!")
         print(pgn)
@@ -387,7 +390,10 @@ def load_game():
         if board.is_game_over(claim_draw=False):
             newGame = True
             if config.get("archive_file") is not None:
-                print(curGame, file=open(config.get("archive_file"), "a"), end="\n\n")
+                arfile = config.get("archive_file")
+                if args.debug:
+                    arfile = arfile + ".debug"
+                print(curGame, file=open(arfile, "a"), end="\n\n")
             else:
                 print("No archive file!")
                 print(pgn)
