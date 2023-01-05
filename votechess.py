@@ -31,9 +31,9 @@ parser.add_argument("-d", "--dir", default=".", dest="dir",
 parser.add_argument("--polyglot",
                     dest="polyglot_book",
                     help="Polyglot opening book")
-parser.add_argment("--claim50", dest="claim50", action="store_true",
-                   help="Claim draws at 3-fold repetition and 50 moves, rather "
-                   "than waiting for 5-fold repetition and 75 moves")
+parser.add_argument("--claim50", dest="claim50", action="store_true",
+                    help="Claim draws at 3-fold repetition and 50 moves, rather "
+                    "than waiting for 5-fold repetition and 75 moves")
 
 args = parser.parse_args()
 os.chdir(args.dir)
