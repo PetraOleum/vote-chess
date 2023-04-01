@@ -481,7 +481,8 @@ if not board.is_game_over(claim_draw=args.claim50) and bool(humMove):
                 if len(board.piece_map()) < 8:
                     fenmod = board.fen().replace(" ", "_")
                     apiurl = "http://tablebase.lichess.ovh/standard?fen="
-                    r = requests.get(url="{}{}".format(apiurl, fenmod))
+                    r = requests.get(url="{}{}".format(apiurl, fenmod),
+                                     timeout=10)
                     res = r.json()
                     if res.get("wdl") == 0 or res.get("category") == "draw":
                         print("Tablebase draw")
