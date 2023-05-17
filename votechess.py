@@ -201,7 +201,9 @@ def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
         lasttoot_id = mastodon.status_post(egmsg,
                                            in_reply_to_id=lasttoot_id,
                                            media_ids=img,
-                                           visibility="public")["id"]
+                                           visibility=("public" if lasttoot_id
+                                                       is None else
+                                                       "unlisted"))["id"]
         config["postid"] = lasttoot_id
     if config.get("archive_file") is not None:
         arfile = config.get("archive_file")
@@ -319,7 +321,9 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         lasttoot_id = mastodon.status_post(tootstring,
                                            in_reply_to_id=lasttoot_id,
                                            media_ids=img,
-                                           visibility="public")["id"]
+                                           visibility=("public" if lasttoot_id
+                                                       is None else
+                                                       "unlisted"))["id"]
         sleep(50)
     tootstring = ""
     if len(options) == 1:
@@ -328,7 +332,10 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         if not args.debug:
             lasttoot_id = mastodon.status_post(tootstring,
                                                in_reply_to_id=lasttoot_id,
-                                               visibility="public")["id"]
+                                               visibility=("public" if
+                                                           lasttoot_id is None
+                                                           else
+                                                           "unlisted"))["id"]
             config["postid"] = lasttoot_id
         else:
             print(tootstring)
@@ -352,7 +359,10 @@ def set_up_vote(last_Comp_Move, curBoard, lastHuman=None):
         if not args.debug:
             lasttoot_id = mastodon.status_post(tmsg, poll=poll,
                                                in_reply_to_id=lasttoot_id,
-                                               visibility="public")["id"]
+                                               visibility=("public" if
+                                                           lasttoot_id is None
+                                                           else
+                                                           "unlisted"))["id"]
             config["postid"] = lasttoot_id
         else:
             print(tmsg)
