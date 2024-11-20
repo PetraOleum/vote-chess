@@ -34,13 +34,34 @@ parser.add_argument("--polyglot",
 parser.add_argument("--claim50", dest="claim50", action="store_true",
                     help="Claim draws at 3-fold repetition and 50 moves, rather "
                     "than waiting for 5-fold repetition and 75 moves")
+parser.add_argument("--board-scale", type=float, default = 2.0, dest="scale",
+                    help="Scale for board (default: 2.0)")
+parser.add_argument("--usercred",
+                       help=("Usercred filepath. "
+                             "Default: usercred.secret"),
+                       dest="usercred_path", default="usercred.secret")
+parser.add_argument("--server",
+                       help=("Mastodon server. "
+                             "Default: https://mastodon.social"),
+                       dest="server", default="https://mastodon.social")
+parser.add_argument("--no-check-api-version",
+                       help=("Don't check API version. "
+                             "Useful for other servers like GtS"),
+                       dest="no_check_api", action="store_true")
+parser.add_argument("--no-start-game",
+                       help=("Don't start a new game. "
+                             "Only continue an existing one"),
+                       dest="no_start_game", action="store_true")
 
 args = parser.parse_args()
 os.chdir(args.dir)
 
+ver_checkmode = "none" if args.no_check_api else "created"
 mastodon = Mastodon(
-    access_token = 'votechess_usercred.secret',
-    api_base_url = 'https://botsin.space'
+    access_token = args.usercred_path,
+    api_base_url = args.server,
+    ratelimit_method='wait',
+    version_check_mode=ver_checkmode
 )
 
 configfp = args.config_file
@@ -111,6 +132,7 @@ def opening_choice(board, bookfile, k=1):
 def print_board(board, choices = None):
     global player
     global config
+    global args
     lm = None
     arrows = [] if choices is None or config.get("show_arrows") != True else [(move.from_square, move.to_square)
                                            for move in choices if move != chess.Move.from_uci("0000")]
@@ -121,7 +143,8 @@ def print_board(board, choices = None):
                                 colors = config.get("board_colours"),
                                 arrows=arrows
                                )
-    svg2png(bytestring=board_svg,write_to=config.get("image_file"), scale=1.5)
+    svg2png(bytestring=board_svg,write_to=config.get("image_file"),
+            scale=args.scale)
 
 
 def clean_endgame(board, lastMove, lastMbut1 = None, adjud = False):
@@ -399,6 +422,7 @@ def load_game():
     global lastMove
     global book
     global lasttoot_id
+    global mastodon
     global args
     global config
     # 1. Test if game exists, is not ended
@@ -427,30 +451,42 @@ def load_game():
                 lastMove = board.peek()
     except:
         newGame = True
-    # Create new game
     if newGame:
-        lasttoot_id = None
-        config["postid"] = None
-        lastMove = None
-        board = chess.Board()
-        player = chess.BLACK if config["human"].get("colour") == "BLACK" else chess.WHITE
-        lastMoveSan = None
-        if player == chess.BLACK:
+        if args.no_start_game:
+            print("No game but flag set to not start new game; aborting")
+            if lasttoot_id is not None and not args.debug:
+                egmsg = "That's all folks!"
+                print(egmsg)
+                mastodon.status_post(egmsg,
+                                     in_reply_to_id=lasttoot_id,
+                                     visibility=("unlisted"))
+                config["postid"] = None
+                save_config()
+            quit()
+        else:
+            # Create new game
+            lasttoot_id = None
+            config["postid"] = None
             lastMove = None
-            if config.get("polyglot_book") is not None:
-                lastMove = opening_choice(board, config.get("polyglot_book"))[0]
-            if lastMove is None:
-                lastMove = chess.Move.from_uci(sample(book, 1)[0])
-            lastMoveSan = board.variation_san([lastMove])
-            board.push(lastMove)
-        set_up_vote(lastMoveSan, board, None)
-        pgn = chess.pgn.Game.from_board(board)
-        pgn.headers["Result"] = "*"
-        pgn = pgn_standard_headers(pgn, player)
-        print(pgn)
-        config["pgn"] = str(pgn)
-        save_config()
-        quit()
+            board = chess.Board()
+            player = chess.BLACK if config["human"].get("colour") == "BLACK" else chess.WHITE
+            lastMoveSan = None
+            if player == chess.BLACK:
+                lastMove = None
+                if config.get("polyglot_book") is not None:
+                    lastMove = opening_choice(board, config.get("polyglot_book"))[0]
+                if lastMove is None:
+                    lastMove = chess.Move.from_uci(sample(book, 1)[0])
+                lastMoveSan = board.variation_san([lastMove])
+                board.push(lastMove)
+            set_up_vote(lastMoveSan, board, None)
+            pgn = chess.pgn.Game.from_board(board)
+            pgn.headers["Result"] = "*"
+            pgn = pgn_standard_headers(pgn, player)
+            print(pgn)
+            config["pgn"] = str(pgn)
+            save_config()
+            quit()
     return board
 
 
